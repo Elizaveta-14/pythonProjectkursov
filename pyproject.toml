@@ -1,0 +1,42 @@
+[project]
+name = "pythonprojectkursov"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Elizaveta",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "lint (>=1.2.1,<2.0.0)",
+    "isort (>=5.13.2,<6.0.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "requests (>=2.32.3,<3.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "pytest (>=8.3.4,<9.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.lint.dependencies]
+black = "^24.10.0"
+flake8 = "^7.1.1"
+mypy = "^1.14.1"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest-cov = "^6.0.0"
+
+[tool.black]
+line-length = 119
+
+[tool.isort]
+line_length = 119
+
+[tool.mypy]
+disallow_untyped_defs = true
+warn_return_any = true
+exclude = "venv"
