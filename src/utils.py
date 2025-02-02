@@ -5,7 +5,7 @@ import requests
 from dotenv import load_dotenv
 import pandas as pd
 import datetime
-
+from typing import Any
 load_dotenv()
 api_key = os.getenv("API_KEY")
 
@@ -37,46 +37,18 @@ def hello_person(current_time):
         return "Доброй ночи"
 
 
-def reading_xlsx(path: str) -> pd.DataFrame:
-    """Функция, которая принимает на вход путь до XLSX-файла
-        и возвращает датафрейм по операциям."""
-    try:
-        logger.info("Путь до файла XLSX-файла верный")
-        fieldnames = {'Дата операции': str, 'Номер карты': str,
-                      'Статус': str, 'Сумма операции': float, 'Валюта операции': str,
-                      'Сумма платежа': float, 'Валюта платежа': str,
-                      'Категория': str, 'Описание': str}
-        df = pd.read_excel(path, decimal=';', dtype=fieldnames)[['Дата операции',
-                                                                 'Номер карты',
-                                                                 'Статус',
-                                                                 'Сумма операции',
-                                                                 'Валюта операции',
-                                                                 'Сумма платежа',
-                                                                 'Валюта платежа',
-                                                                 'Категория',
-                                                                 'Описание']]
-        df['Дата операции'] = pd.to_datetime(df['Дата операции'], dayfirst=True)
-        return df
-    except FileNotFoundError:
-        return pd.DataFrame()
-
-
-def get_transactions(transactions_code):
-    """Функция принимает на вход путь до JSON-файла и возвращает список словарей"""
-    transactions = []
-    try:
-        logger.info("Путь до файла json верный")
-        with open(transactions_code, "r", encoding="utf-8") as file:
-            transaction_content = json.load(file)
-            return transaction_content
-
-    except FileNotFoundError:
-        logger.error("Импортируемый список пуст или отсутствует.")
-        return transactions
-    except json.JSONDecodeError:
-        logger.error("Импортируемый список пуст или отсутствует.")
-        return transactions
-
+def reading_xlsx(filename: str) -> Any:
+      """Считывает данные с EXCEL файла и переобразовыввает их в JSON-формат"""
+      logger.info("Начали считывание информации с EXCEL-файла")
+      try:
+          operations = pd.read_excel(filename)
+          operations = operations.where(pd.notnull(operations), operations.fillna("Отсутствует"))
+          file_dict = operations.to_dict(orient="records")
+          logger.info("Окончили считывание информации с EXCEL-файла")
+          return file_dict
+      except Exception as e:
+          logger.error(f"Произошла ошибка {e} при считывание информации с EXCEL-файла")
+          return f"Ошибка {e}. повторите попытку"
 
 def get_mask_account(transaction_content: int) -> str:
     """Функция принимает на вход номер карты и возвращает маскированный номер по правилу
@@ -122,4 +94,27 @@ def analyze_transactions(df: pd.DataFrame):
         "total_spent": total_spent,
         "cashback": cashback,
         "top_5_transactions": top_5_transactions}
+
+def stock_prices(info):
+    """Подключаемся к API, получаем наименование акции и ее цену, добавляем в словарь info"""
+    try:
+        logger.info("Good stocks")
+        data_json = {
+            "data": {
+                "trends": [
+                    {"name": "S&P 500", "price": 4500.50},
+                    {"name": "Dow Jones", "price": 34000.75},
+                    {"name": "NASDAQ", "price": 15000.25},
+                ]
+            }
+        }
+
+        info["stock_prices"] = []
+
+        for trend in data_json["data"]["trends"]:
+            info["stock_prices"].append({"stock": trend["name"], "price": trend["price"]})
+        return info
+    except Exception as e:
+        logger.error("Everybody has problems with foreign stocks.")
+        print(f"We have a problem with stocks, Watson: {e}")
 
