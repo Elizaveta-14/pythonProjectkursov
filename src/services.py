@@ -15,8 +15,6 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
 
-
-
 def get_profitable_cashback_categories(data: list, year: str, month: str) -> str:
     """
     На вход функции поступают данные для анализа, год и месяц.
@@ -72,4 +70,3 @@ def get_profitable_cashback_categories(data: list, year: str, month: str) -> str
     parsed_result = json.dumps(filtered_result, ensure_ascii=False)
 
     return parsed_result
-

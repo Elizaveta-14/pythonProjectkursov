@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import pandas as pd
 import datetime
 from typing import Any
+
 load_dotenv()
 api_key = os.getenv("API_KEY")
 
@@ -18,6 +19,7 @@ file_handler = logging.FileHandler(abs_log_file_path, "w", encoding="utf-8")
 file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
+
 
 def hello_person(current_time):
     """Функция приветсвия во времени суток"""
@@ -38,17 +40,18 @@ def hello_person(current_time):
 
 
 def reading_xlsx(filename: str) -> Any:
-      """Считывает данные с EXCEL файла и переобразовыввает их в JSON-формат"""
-      logger.info("Начали считывание информации с EXCEL-файла")
-      try:
-          operations = pd.read_excel(filename)
-          operations = operations.where(pd.notnull(operations), operations.fillna("Отсутствует"))
-          file_dict = operations.to_dict(orient="records")
-          logger.info("Окончили считывание информации с EXCEL-файла")
-          return file_dict
-      except Exception as e:
-          logger.error(f"Произошла ошибка {e} при считывание информации с EXCEL-файла")
-          return f"Ошибка {e}. повторите попытку"
+    """Считывает данные с EXCEL файла и переобразовыввает их в JSON-формат"""
+    logger.info("Начали считывание информации с EXCEL-файла")
+    try:
+        operations = pd.read_excel(filename)
+        operations = operations.where(pd.notnull(operations), operations.fillna("Отсутствует"))
+        file_dict = operations.to_dict(orient="records")
+        logger.info("Окончили считывание информации с EXCEL-файла")
+        return file_dict
+    except Exception as e:
+        logger.error(f"Произошла ошибка {e} при считывание информации с EXCEL-файла")
+        return f"Ошибка {e}. повторите попытку"
+
 
 def get_mask_account(transaction_content: int) -> str:
     """Функция принимает на вход номер карты и возвращает маскированный номер по правилу
@@ -90,10 +93,8 @@ def analyze_transactions(df: pd.DataFrame):
 
     top_5_transactions = df.nlargest(5, "Сумма платежа")
 
-    return {
-        "total_spent": total_spent,
-        "cashback": cashback,
-        "top_5_transactions": top_5_transactions}
+    return {"total_spent": total_spent, "cashback": cashback, "top_5_transactions": top_5_transactions}
+
 
 def stock_prices(info):
     """Подключаемся к API, получаем наименование акции и ее цену, добавляем в словарь info"""
@@ -117,4 +118,3 @@ def stock_prices(info):
     except Exception as e:
         logger.error("Everybody has problems with foreign stocks.")
         print(f"We have a problem with stocks, Watson: {e}")
-

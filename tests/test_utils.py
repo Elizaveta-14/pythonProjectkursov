@@ -3,8 +3,14 @@ import unittest
 from unittest.mock import patch
 import pandas as pd
 import logging
-from src.utils import (reading_xlsx , get_mask_account, get_convert_amount, analyze_transactions,stock_prices,
-                       hello_person)
+from src.utils import (
+    reading_xlsx,
+    get_mask_account,
+    get_convert_amount,
+    analyze_transactions,
+    stock_prices,
+    hello_person,
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -42,19 +48,18 @@ class TestReadingXlsx(unittest.TestCase):
     def test_reading_xlsx_success(self, mock_read_excel):
         """Тест для успешного считывания данных из EXCEL файла"""
         data = {
-            'Дата операции': ['01.01.2023', '02.01.2023'],
-            'Номер карты': ['1234567890', '0987654321'],
-            'Сумма операции': [100.0, 200.0],
+            "Дата операции": ["01.01.2023", "02.01.2023"],
+            "Номер карты": ["1234567890", "0987654321"],
+            "Сумма операции": [100.0, 200.0],
         }
         df = pd.DataFrame(data)
         mock_read_excel.return_value = df
         result = reading_xlsx("test_file.xlsx")
         expected_result = [
-            {'Дата операции': '01.01.2023', 'Номер карты': '1234567890', 'Сумма операции': 100.0},
-            {'Дата операции': '02.01.2023', 'Номер карты': '0987654321', 'Сумма операции': 200.0},
+            {"Дата операции": "01.01.2023", "Номер карты": "1234567890", "Сумма операции": 100.0},
+            {"Дата операции": "02.01.2023", "Номер карты": "0987654321", "Сумма операции": 200.0},
         ]
         self.assertEqual(result, expected_result)
-
 
     @patch("pandas.read_excel")
     def test_reading_xlsx_empty_file(self, mock_read_excel):
@@ -63,7 +68,6 @@ class TestReadingXlsx(unittest.TestCase):
         mock_read_excel.return_value = df
         result = reading_xlsx("empty_file.xlsx")
         self.assertEqual(result, [])
-
 
     @patch("pandas.read_excel")
     def test_reading_xlsx_invalid_format(self, mock_read_excel):
@@ -77,7 +81,7 @@ def test_analyze_transactions():
     """Тестирует расчет расходов, кэшбэка и топ-5 транзакций"""
     data = {
         "Дата операции": ["01.01.2024", "02.01.2024", "03.01.2024", "04.01.2024", "05.01.2024", "06.01.2024"],
-        "Сумма платежа": [500, 1500, 3000, 1200, 7000, 2500]
+        "Сумма платежа": [500, 1500, 3000, 1200, 7000, 2500],
     }
     df = pd.DataFrame(data)
 
@@ -101,14 +105,18 @@ def test_analyze_transactions_empty():
     assert result["total_spent"] == 0, "Общая сумма должна быть 0 для пустого DataFrame"
     assert result["cashback"] == 0, "Кэшбэк должен быть 0 для пустого DataFrame"
     assert result["top_5_transactions"].empty, "Топ-5 должен быть пустым для пустого DataFrame"
-@pytest.mark.parametrize("time_str, expected_greeting", [
-    ("30.01.2024 08:00:00", "Доброе утро"),
-    ("30.01.2024 14:00:00", "Добрый день"),
-    ("30.01.2024 19:00:00", "Добрый вечер"),
-    ("30.01.2024 23:00:00", "Доброй ночи"),
-    ("30.01.2024 03:00:00", "Доброй ночи")])
 
 
+@pytest.mark.parametrize(
+    "time_str, expected_greeting",
+    [
+        ("30.01.2024 08:00:00", "Доброе утро"),
+        ("30.01.2024 14:00:00", "Добрый день"),
+        ("30.01.2024 19:00:00", "Добрый вечер"),
+        ("30.01.2024 23:00:00", "Доброй ночи"),
+        ("30.01.2024 03:00:00", "Доброй ночи"),
+    ],
+)
 def test_hello_person_valid_time(time_str, expected_greeting):
     """Тестирование приветствия в зависимости от времени суток"""
     assert hello_person(time_str) == expected_greeting

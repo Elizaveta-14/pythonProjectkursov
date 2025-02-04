@@ -1,0 +1,2 @@
+2025-02-04 21:19:38,498 - reports - ERROR: Возникла ошибка time data '30.12.2021 17:50:30' does not match format '%Y.%m.%d'
+2025-02-04 21:19:38,502 - reports - INFO: Записан результат работы функции <function spending_by_category at 0x00000222676E1620>
