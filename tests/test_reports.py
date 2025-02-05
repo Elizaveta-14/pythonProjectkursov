@@ -5,7 +5,6 @@ from src.reports import spending_by_category
 
 @pytest.fixture
 def sample_data():
-    # Пример тестовых данных
     data = {
         "Дата операции": [
             "01.12.2021 12:00:00",
