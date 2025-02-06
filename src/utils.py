@@ -1,31 +1,29 @@
-import os
+import datetime
 import logging
+import os
+from typing import Any
+import json
+import pandas as pd
 import requests
 from dotenv import load_dotenv
-import pandas as pd
-import datetime
-from typing import Any
-
+from datetime import datetime
 load_dotenv()
 api_key = os.getenv("API_KEY")
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-rel_log_file_path = os.path.join("C:\\Users\\Asus\\PycharmProjects\\pythonProjectkursov\\logs\\utils.log")
-abs_log_file_path = os.path.abspath(rel_log_file_path)
-logger = logging.getLogger("utils")
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(abs_log_file_path, "w", encoding="utf-8")
-file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler('../utils.log', "w")
+file_formatter = logging.Formatter('%(asctime)s - %(filename)s - %(levelname)s: %(message)s')
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
+logger.setLevel(logging.DEBUG)
 
 
-def hello_person(current_time):
+def hello_person(time_str: str) -> str:
     """Функция приветсвия во времени суток"""
     try:
-        current_time = datetime.datetime.strptime(current_time, "%d.%m.%Y %H:%M:%S")
-    except ValueError:
-        raise ValueError("Некорректный формат времени")
+        current_time = datetime.strptime(time_str, "%d.%m.%Y %H:%M:%S")
+    except ValueError as e:
+        raise ValueError("Некорректный формат времени. Ожидается формат: '%d.%m.%Y %H:%M:%S'") from e
 
     hour = current_time.hour
     if 6 <= hour <= 11:
@@ -62,20 +60,6 @@ def get_mask_account(transaction_content: int) -> str:
     return f"{str_number_card[:4]} ** {str_number_card[-4:]}"
 
 
-def get_convert_amount(currency_code, amount):
-    """Проверяет текущий курс валюты"""
-    try:
-        if currency_code == "USD" or currency_code == "EUR":
-            url = f"https://api.apilayer.com/exchangerates_data/convert?to=RUB&from={currency_code}&amount={amount}"
-        headers = {"apikey": api_key}
-        response = requests.get(url, headers=headers)
-        json_result = response.json()
-        rub_amount = json_result["result"]
-        return round(rub_amount, 2)
-
-    except KeyError:
-        return 0
-
 
 def analyze_transactions(df: pd.DataFrame):
     """
@@ -95,25 +79,48 @@ def analyze_transactions(df: pd.DataFrame):
     return {"total_spent": total_spent, "cashback": cashback, "top_5_transactions": top_5_transactions}
 
 
-def stock_prices(info):
-    """Подключаемся к API, получаем наименование акции и ее цену, добавляем в словарь info"""
-    try:
-        logger.info("Good stocks")
-        data_json = {
-            "data": {
-                "trends": [
-                    {"name": "S&P 500", "price": 4500.50},
-                    {"name": "Dow Jones", "price": 34000.75},
-                    {"name": "NASDAQ", "price": 15000.25},
-                ]
-            }
-        }
+def get_convert_amount() -> list:
+    """Функция выводит курс валют для необходимой валюты из файла"""
+    logger.info("Получаем информацию с файла о необходимой цены валюты")
+    with open("../data/user_setings.json", "r") as file:
+        reading = json.load(file)["user_currencies"]
 
-        info["stock_prices"] = []
+    load_dotenv()
+    api_key = os.getenv("API_KEY")
 
-        for trend in data_json["data"]["trends"]:
-            info["stock_prices"].append({"stock": trend["name"], "price": trend["price"]})
-        return info
-    except Exception as e:
-        logger.error("Everybody has problems with foreign stocks.")
-        print(f"We have a problem with stocks, Watson: {e}")
+    currency_rate = []
+    logger.info("Производим запрос по API по небходимым валютам")
+    for i in reading:
+        url = f"https://api.apilayer.com/exchangerates_data/latest?symbols=RUB&base={i}"
+
+        headers = {"apikey": f"{api_key}"}
+
+        response = requests.get(url, headers=headers)
+
+        get_value = round(response.json()["rates"]["RUB"], 2)
+        currency_rate.append(dict(Валюта=i, Цена=get_value))
+        status_code = response.status_code
+    logger.info("Окончили сбор информации по валютам")
+    return currency_rate
+
+
+def stock_prices() -> list:
+    """Функция получает результаты по API цену акций"""
+    logger.info("Получаем информацию с файла о необходимых цен на АКЦИИ")
+    with open("../data/user_setings.json", "r") as file:
+        reading = json.load(file)["user_stocks"]
+
+        API_KEY = os.getenv("API_TOKEN_SP_SECOND")
+        logger.info("Производим запрос по API")
+        url = f"https://financialmodelingprep.com/api/v3/stock/list?apikey={API_KEY}"
+        response = requests.get(url)
+
+        data = response.json()
+        stock_price = []
+        logger.info("Фильтруем список согласна необходимых данных")
+        for i in data:
+            for element in reading:
+                if i["symbol"] == element:
+                    stock_prices.append(dict(Акция=element, Цена=i["price"]))
+        logger.info("Окончили сбор данных цен на АКЦИИ")
+        return stock_price

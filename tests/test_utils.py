@@ -1,16 +1,16 @@
-import pytest
+import logging
 import unittest
 from unittest.mock import patch
+import unittest
+from unittest.mock import patch, mock_open, MagicMock
+import json
+import os
+import requests
 import pandas as pd
-import logging
-from src.utils import (
-    reading_xlsx,
-    get_mask_account,
-    get_convert_amount,
-    analyze_transactions,
-    stock_prices,
-    hello_person,
-)
+import pytest
+
+from src.utils import (analyze_transactions, get_convert_amount, get_mask_account, hello_person, reading_xlsx,
+                       stock_prices)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,13 +33,6 @@ def test_get_mask_account_edge_case():
 def test_get_mask_account_large_number():
     """Тестирует длинный номер карты"""
     assert get_mask_account(9876543210987654321) == "9876 ** 4321", "Ошибка при обработке длинного номера"
-
-
-@patch("json.loads")
-def test_get_convert_amount(mock_get):
-    """Проверяет статус коде 200"""
-    mock_get.return_value.status_code = 200
-    assert get_convert_amount != 0
 
 
 class TestReadingXlsx(unittest.TestCase):
@@ -128,20 +121,46 @@ def test_hello_person_invalid_format():
         hello_person("2024-01-30 08:00:00")
 
 
-@pytest.mark.parametrize(
-    "input_stock, exit_stock",
-    [
-        (
-            {},
-            {
-                "stock_prices": [
-                    {"stock": "S&P 500", "price": 4500.5},
-                    {"stock": "Dow Jones", "price": 34000.75},
-                    {"stock": "NASDAQ", "price": 15000.25},
-                ]
-            },
+class TestGetConvertAmount(unittest.TestCase):
+
+    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps({"user_currencies": ["USD", "EUR"]}))
+    @patch("os.getenv", return_value="fake_api_key")
+    @patch("requests.get")
+    def test_get_convert_amount(self, mock_requests_get, mock_getenv, mock_file):
+        """Тестируем функцию на курс и конвертацию"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"rates": {"RUB": 75.50}}
+        mock_requests_get.return_value = mock_response
+        expected_result = [
+            {"Валюта": "USD", "Цена": 75.50},
+            {"Валюта": "EUR", "Цена": 75.50}
+        ]
+        result = get_convert_amount()
+        self.assertEqual(result, expected_result)
+        mock_requests_get.assert_any_call(
+            "https://api.apilayer.com/exchangerates_data/latest?symbols=RUB&base=USD",
+            headers={"apikey": "fake_api_key"}
         )
-    ],
-)
-def test_stock_prices(input_stock, exit_stock):
-    assert stock_prices(input_stock) == exit_stock
+        mock_requests_get.assert_any_call(
+            "https://api.apilayer.com/exchangerates_data/latest?symbols=RUB&base=EUR",
+            headers={"apikey": "fake_api_key"}
+        )
+        mock_getenv.assert_called_with("API_KEY")
+        mock_file.assert_called_with('C:\\Users\\Asus\\PycharmProjects\\pythonProjectkursov\\.env', encoding='utf-8')
+
+class TestStockPrices(unittest.TestCase):
+
+    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps({"user_stocks": ["AAPL", "GOOGL"]}))
+    @patch("os.getenv", return_value="fake_api_key")
+    @patch("requests.get")
+    def test_stock_prices_no_matches(self, mock_requests_get, mock_getenv, mock_file):
+        mock_response = MagicMock()
+        mock_response.json.return_value = [
+            {"symbol": "MSFT", "price": 299.99},
+            {"symbol": "TSLA", "price": 800.00},
+        ]
+        mock_requests_get.return_value = mock_response
+        expected_result = []
+        result = stock_prices()
+        self.assertEqual(result, expected_result)

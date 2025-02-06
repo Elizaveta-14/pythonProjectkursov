@@ -1,5 +1,5 @@
-import pytest
 import pandas as pd
+import pytest
 from src.reports import spending_by_category
 
 
