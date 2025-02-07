@@ -1,14 +1,12 @@
 import functools
 import logging
-import os
 from datetime import datetime, timedelta
 from typing import Any, Callable
-
 import pandas as pd
 
 logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler('../reports.log.log', "w")
-file_formatter = logging.Formatter('%(asctime)s - %(filename)s - %(levelname)s: %(message)s')
+file_handler = logging.FileHandler("../reports.log.log", "w")
+file_formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 logger.setLevel(logging.DEBUG)
@@ -26,7 +24,6 @@ def report_to_file_default(func: Callable) -> Callable:
         return result
 
     return wrapper
-
 
 
 @report_to_file_default

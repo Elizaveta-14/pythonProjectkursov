@@ -6,13 +6,14 @@ import json
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from datetime import datetime
+
+
 load_dotenv()
 api_key = os.getenv("API_KEY")
 
 logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler('../utils.log', "w")
-file_formatter = logging.Formatter('%(asctime)s - %(filename)s - %(levelname)s: %(message)s')
+file_handler = logging.FileHandler("../utils.log", "w")
+file_formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 logger.setLevel(logging.DEBUG)
@@ -21,7 +22,7 @@ logger.setLevel(logging.DEBUG)
 def hello_person(time_str: str) -> str:
     """Функция приветсвия во времени суток"""
     try:
-        current_time = datetime.strptime(time_str, "%d.%m.%Y %H:%M:%S")
+        current_time = datetime.datetime.strptime(time_str, "%Y.%m.%d %H:%M:%S")
     except ValueError as e:
         raise ValueError("Некорректный формат времени. Ожидается формат: '%d.%m.%Y %H:%M:%S'") from e
 
@@ -60,7 +61,6 @@ def get_mask_account(transaction_content: int) -> str:
     return f"{str_number_card[:4]} ** {str_number_card[-4:]}"
 
 
-
 def analyze_transactions(df: pd.DataFrame):
     """
     Анализирует транзакции по карте:
@@ -76,7 +76,7 @@ def analyze_transactions(df: pd.DataFrame):
 
     top_5_transactions = df.nlargest(5, "Сумма платежа")
 
-    return {"total_spent": total_spent, "cashback": cashback, "top_5_transactions": top_5_transactions}
+    return df.DataFrame({"total_spent": total_spent, "cashback": cashback, "top_5_transactions": top_5_transactions})
 
 
 def get_convert_amount() -> list:
@@ -99,7 +99,7 @@ def get_convert_amount() -> list:
 
         get_value = round(response.json()["rates"]["RUB"], 2)
         currency_rate.append(dict(Валюта=i, Цена=get_value))
-        status_code = response.status_code
+#        status_code = response.status_code
     logger.info("Окончили сбор информации по валютам")
     return currency_rate
 
