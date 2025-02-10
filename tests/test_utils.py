@@ -1,18 +1,13 @@
+import json
 import logging
 import unittest
-from unittest.mock import patch, mock_open, MagicMock
-import json
+from unittest.mock import MagicMock, mock_open, patch
+
 import pandas as pd
 import pytest
 
-from src.utils import (
-    analyze_transactions,
-    get_convert_amount,
-    get_mask_account,
-    hello_person,
-    reading_xlsx,
-    stock_prices,
-)
+from src.utils import (analyze_transactions, get_convert_amount, get_mask_account, hello_person, reading_xlsx,
+                       stock_prices)
 
 logging.basicConfig(level=logging.INFO)
 

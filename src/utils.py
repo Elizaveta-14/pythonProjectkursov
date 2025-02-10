@@ -1,12 +1,12 @@
 import datetime
+import json
 import logging
 import os
 from typing import Any
-import json
+
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-
 
 load_dotenv()
 api_key = os.getenv("API_KEY")
@@ -121,6 +121,6 @@ def stock_prices() -> list:
         for i in data:
             for element in reading:
                 if i["symbol"] == element:
-                    stock_prices.append(dict(Акция=element, Цена=i["price"]))
+                    stock_price.append(dict(Акция=element, Цена=i["price"]))
         logger.info("Окончили сбор данных цен на АКЦИИ")
         return stock_price
