@@ -2,17 +2,13 @@ import json
 import logging
 import re
 from datetime import datetime
-import os
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-rel_log_file_path = os.path.join("C:\\Users\\Asus\\PycharmProjects\\pythonProjectkursov\\logs\\services.log")
-abs_log_file_path = os.path.abspath(rel_log_file_path)
-logger = logging.getLogger("services")
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(abs_log_file_path, "w", encoding="utf-8")
-file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler("../services.log", "w")
+file_formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
+logger.setLevel(logging.DEBUG)
 
 
 def get_profitable_cashback_categories(data: list, year: str, month: str) -> str:

@@ -1,5 +1,6 @@
-import pytest
 import pandas as pd
+import pytest
+
 from src.reports import spending_by_category
 
 
@@ -21,6 +22,6 @@ def sample_data():
 
 
 def test_spending_by_category_with_date(sample_data):
-    """ Тестирование функции с указанной датой и категорией "Продукты" """
+    """Тестирование функции с указанной датой и категорией "Продукты" """
     result = spending_by_category(sample_data, "Продукты", "30.12.2021 17:50:30")
     assert len(result) == 0

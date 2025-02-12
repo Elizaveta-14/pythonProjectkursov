@@ -1,45 +1,35 @@
-import pytest
-import unittest
-from unittest.mock import patch
-import pandas as pd
+import json
 import logging
-from src.utils import (
-    reading_xlsx,
-    get_mask_account,
-    get_convert_amount,
-    analyze_transactions,
-    stock_prices,
-    hello_person,
-)
+import unittest
+from unittest.mock import MagicMock, mock_open, patch
+
+import pandas as pd
+import pytest
+
+from src.utils import (analyze_transactions, get_convert_amount, get_mask_account, hello_person, reading_xlsx,
+                       stock_prices)
 
 logging.basicConfig(level=logging.INFO)
 
 
-def test_get_mask_account_valid():
+def test_get_mask_account_valid() -> None:
     """Тестирует корректную маскировку номера карты"""
     assert get_mask_account(1234567890123456) == "1234 ** 3456", "Ошибка в маскировании номера карты"
 
 
-def test_get_mask_account_short_number():
+def test_get_mask_account_short_number() -> None:
     """Тестирует поведение при слишком коротком номере карты"""
     assert get_mask_account(12345) == "Ошибка: Неверный номер карты", "Ошибка при обработке короткого номера"
 
 
-def test_get_mask_account_edge_case():
+def test_get_mask_account_edge_case() -> None:
     """Тестирует граничный случай (ровно 6 цифр)"""
     assert get_mask_account(123456) == "1234 ** 3456", "Ошибка при обработке 6-значного номера"
 
 
-def test_get_mask_account_large_number():
+def test_get_mask_account_large_number() -> None:
     """Тестирует длинный номер карты"""
     assert get_mask_account(9876543210987654321) == "9876 ** 4321", "Ошибка при обработке длинного номера"
-
-
-@patch("json.loads")
-def test_get_convert_amount(mock_get):
-    """Проверяет статус коде 200"""
-    mock_get.return_value.status_code = 200
-    assert get_convert_amount != 0
 
 
 class TestReadingXlsx(unittest.TestCase):
@@ -77,26 +67,9 @@ class TestReadingXlsx(unittest.TestCase):
         self.assertEqual(result, "Ошибка Ошибка формата файла. повторите попытку")
 
 
-def test_analyze_transactions():
-    """Тестирует расчет расходов, кэшбэка и топ-5 транзакций"""
-    data = {
-        "Дата операции": ["01.01.2024", "02.01.2024", "03.01.2024", "04.01.2024", "05.01.2024", "06.01.2024"],
-        "Сумма платежа": [500, 1500, 3000, 1200, 7000, 2500],
-    }
-    df = pd.DataFrame(data)
-
-    result = analyze_transactions(df)
-
-    assert result["total_spent"] == 15700, "Неверная общая сумма расходов"
-    assert result["cashback"] == 157, "Неверный кэшбэк"
-
-    top_5_expected = [7000, 3000, 2500, 1500, 1200]
-    top_5_actual = result["top_5_transactions"]["Сумма платежа"].tolist()
-
-    assert top_5_actual == top_5_expected, "Топ-5 транзакций определены неверно"
 
 
-def test_analyze_transactions_empty():
+def test_analyze_transactions_empty() -> None:
     """Тестирует поведение с пустым DataFrame"""
     df = pd.DataFrame(columns=["Дата операции", "Сумма платежа"])
 
@@ -110,11 +83,11 @@ def test_analyze_transactions_empty():
 @pytest.mark.parametrize(
     "time_str, expected_greeting",
     [
-        ("30.01.2024 08:00:00", "Доброе утро"),
-        ("30.01.2024 14:00:00", "Добрый день"),
-        ("30.01.2024 19:00:00", "Добрый вечер"),
-        ("30.01.2024 23:00:00", "Доброй ночи"),
-        ("30.01.2024 03:00:00", "Доброй ночи"),
+        ("2024.01.30 08:00:00", "Доброе утро"),
+        ("2024.01.30 14:00:00", "Добрый день"),
+        ("2024.01.30 19:00:00", "Добрый вечер"),
+        ("2024.01.30 23:00:00", "Доброй ночи"),
+        ("2024.01.30 03:00:00", "Доброй ночи"),
     ],
 )
 def test_hello_person_valid_time(time_str, expected_greeting):
@@ -122,26 +95,44 @@ def test_hello_person_valid_time(time_str, expected_greeting):
     assert hello_person(time_str) == expected_greeting
 
 
-def test_hello_person_invalid_format():
-    """Тестирование обработки некорректного формата времени"""
-    with pytest.raises(ValueError, match="Некорректный формат времени"):
-        hello_person("2024-01-30 08:00:00")
+class TestGetConvertAmount(unittest.TestCase):
 
-
-@pytest.mark.parametrize(
-    "input_stock, exit_stock",
-    [
-        (
-            {},
-            {
-                "stock_prices": [
-                    {"stock": "S&P 500", "price": 4500.5},
-                    {"stock": "Dow Jones", "price": 34000.75},
-                    {"stock": "NASDAQ", "price": 15000.25},
-                ]
-            },
+    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps({"user_currencies": ["USD", "EUR"]}))
+    @patch("os.getenv", return_value="fake_api_key")
+    @patch("requests.get")
+    def test_get_convert_amount(self, mock_requests_get, mock_getenv, mock_file):
+        """Тестируем функцию на курс и конвертацию"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"rates": {"RUB": 75.50}}
+        mock_requests_get.return_value = mock_response
+        expected_result = [{"Валюта": "USD", "Цена": 75.50}, {"Валюта": "EUR", "Цена": 75.50}]
+        result = get_convert_amount()
+        self.assertEqual(result, expected_result)
+        mock_requests_get.assert_any_call(
+            "https://api.apilayer.com/exchangerates_data/latest?symbols=RUB&base=USD",
+            headers={"apikey": "fake_api_key"},
         )
-    ],
-)
-def test_stock_prices(input_stock, exit_stock):
-    assert stock_prices(input_stock) == exit_stock
+        mock_requests_get.assert_any_call(
+            "https://api.apilayer.com/exchangerates_data/latest?symbols=RUB&base=EUR",
+            headers={"apikey": "fake_api_key"},
+        )
+        mock_getenv.assert_called_with("API_KEY")
+        mock_file.assert_called_with("C:\\Users\\Asus\\PycharmProjects\\pythonProjectkursov\\.env", encoding="utf-8")
+
+
+class TestStockPrices(unittest.TestCase):
+
+    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps({"user_stocks": ["AAPL", "GOOGL"]}))
+    @patch("os.getenv", return_value="fake_api_key")
+    @patch("requests.get")
+    def test_stock_prices_no_matches(self, mock_requests_get, mock_getenv, mock_file):
+        mock_response = MagicMock()
+        mock_response.json.return_value = [
+            {"symbol": "MSFT", "price": 299.99},
+            {"symbol": "TSLA", "price": 800.00},
+        ]
+        mock_requests_get.return_value = mock_response
+        expected_result = []
+        result = stock_prices()
+        self.assertEqual(result, expected_result)

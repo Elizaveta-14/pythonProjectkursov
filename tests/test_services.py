@@ -1,6 +1,6 @@
+import json
 import unittest
 from unittest.mock import patch
-import json
 
 from src.services import get_profitable_cashback_categories
 

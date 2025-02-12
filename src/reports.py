@@ -1,19 +1,16 @@
 import functools
-from datetime import datetime, timedelta
-import os
 import logging
+from datetime import datetime, timedelta
 from typing import Any, Callable
+
 import pandas as pd
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-rel_log_file_path = os.path.join("C:\\Users\\Asus\\PycharmProjects\\pythonProjectkursov\\logs\\reports.log")
-abs_log_file_path = os.path.abspath(rel_log_file_path)
-logger = logging.getLogger("reports")
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(abs_log_file_path, "w", encoding="utf-8")
-file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler("../reports.log.log", "w")
+file_formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
+logger.setLevel(logging.DEBUG)
 
 
 def report_to_file_default(func: Callable) -> Callable:
@@ -28,23 +25,6 @@ def report_to_file_default(func: Callable) -> Callable:
         return result
 
     return wrapper
-
-
-def report_to_file(filename: str = "function_operation_report.txt") -> Callable:
-    """Записывает в переданный файл результат, который возвращает функция, формирующая отчет."""
-
-    def decorator(func: Callable[[tuple[Any, ...], dict[str, Any]], Any]) -> Callable:
-        @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            result = func(*args, **kwargs)
-            with open(filename, "w") as file:
-                file.write(str(result))
-            logger.info(f"Записан результат работы функции {func} в файл {filename}")
-            return result
-
-        return wrapper
-
-    return decorator
 
 
 @report_to_file_default
