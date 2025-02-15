@@ -3,12 +3,10 @@ import logging
 import re
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler("../services.log", "w")
-file_formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s: %(message)s")
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
-logger.setLevel(logging.DEBUG)
+from logging_config import setup_logging
+
+setup_logging()
+logger = logging.getLogger("my_log")
 
 
 def get_profitable_cashback_categories(data: list, year: str, month: str) -> str:
