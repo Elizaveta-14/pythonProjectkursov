@@ -4,24 +4,41 @@ import pytest
 from src.reports import spending_by_category
 
 
-@pytest.fixture
-def sample_data():
-    data = {
-        "Дата операции": [
-            "01.12.2021 12:00:00",
-            "15.12.2021 10:30:00",
-            "25.12.2021 18:45:00",
-            "05.01.2022 08:00:00",
-            "20.02.2022 16:20:00",
-        ],
-        "Категория": ["Продукты", "Продукты", "Транспорт", "Продукты", "Транспорт"],
-        "Сумма": [100, 200, 50, 150, 80],
-    }
-    df = pd.DataFrame(data)
-    return df
+@pytest.mark.parametrize(
+    "df, expected",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "Дата платежа": ["01.01.2025", "01.01.2025", "02.01.2025", "03.01.2025"],
+                    "Категория": ["Такси", "Еда", "Такси", "Супермаркеты"],
+                    "Сумма операции": [-777, -555, -1312, -666],
+                }
+            ),
+            pd.DataFrame({"Категория": ["Еда"], "Сумма трат": [555]}),
+        )
+    ],
+)
+def test_spending_by_category(df, expected):
+    result = spending_by_category(df, "Еда", "01.01.2025")
+    pd.testing.assert_frame_equal(result, expected)
 
 
-def test_spending_by_category_with_date(sample_data):
-    """Тестирование функции с указанной датой и категорией "Продукты" """
-    result = spending_by_category(sample_data, "Продукты", "30.12.2021 17:50:30")
-    assert len(result) == 0
+@pytest.mark.parametrize(
+    "df, expected",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "Дата платежа": ["01.01.2025", "01.01.2025", "02.01.2025", "03.01.2025"],
+                    "Категория": ["Такси", "Еда", "Такси", "Супермаркеты"],
+                    "Сумма операции": [-777, -555, -1312, -666],
+                }
+            ),
+            pd.DataFrame({"Категория": ["Еда"], "Сумма трат": [555]}),
+        )
+    ],
+)
+def test_spending_by_category_not_date(df, expected):
+    result = spending_by_category(df, "Еда")
+    pd.testing.assert_frame_equal(result, expected)
